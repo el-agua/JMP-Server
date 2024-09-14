@@ -1,9 +1,11 @@
+require('dotenv').config();
+
 var express = require('express');
 var router = express.Router();
 const axios = require('axios');
 
 const MODEL_ID = "8w6yyp2q";
-const BASETEN_API_KEY = 'YMKFudUr.FcjOTi13DlaR3ZtCbBIumoXeqFJy25yx';
+const BASETEN_API_KEY = process.env.BASETEN_API_KEY;
 
 router.post('/', async function (req, res, next) {
     try {
