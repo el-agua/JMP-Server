@@ -1,6 +1,6 @@
 var express = require("express");
 var router = express.Router();
-var {generateLocations} = require("./utils");
+var { generateLocations } = require("./utils");
 require("dotenv").config();
 
 const processData = async (data, n) => {
@@ -43,7 +43,6 @@ const processData = async (data, n) => {
 
 /* GET locations listing. */
 router.get("/generate", async function (req, res, next) {
-
   if (
     !req.query["latitude"] ||
     !req.query["longitude"] ||
@@ -53,8 +52,7 @@ router.get("/generate", async function (req, res, next) {
     res.status(500).send("Please provide a latitude, longitude, and city");
     return;
   }
-  
-  
+
   const query = {
     model: "llama-3.1-sonar-large-128k-online",
     messages: [
@@ -105,26 +103,25 @@ router.get("/generate", async function (req, res, next) {
 
 /* GET game loop data */
 router.get("/coordinates", async function (req, res, next) {
-
-    if (!req.query["lat"] ||
-      !req.query["long"] ||
-      !req.query["number"]
-    ) {
-      res.status(500).send("Please provide a latitude, longitude");
-      return;
-    }
-    const obj = await fetch(
-        `https://api.mapbox.com/search/geocode/v6/reverse?longitude=${req.query["long"]}&latitude=${req.query["lat"]}&access_token=${process.env.MAPBOX_KEY}&limit=1`,
-      );
-    const resp = await obj.json();
-    city = resp.features[0].properties.context.place.name;
-    state = resp.features[0].properties.context.region.name;
-    city_string = city + ", " + state;
-    generateLocations(req.query["lat"], req.query["long"], city_string, req.query["number"]).then((choices) => {
-        res.json(choices)
-    });
-  
-    
+  if (!req.query["lat"] || !req.query["long"] || !req.query["number"]) {
+    res.status(500).send("Please provide a latitude, longitude");
+    return;
+  }
+  const obj = await fetch(
+    `https://api.mapbox.com/search/geocode/v6/reverse?longitude=${req.query["long"]}&latitude=${req.query["lat"]}&access_token=${process.env.MAPBOX_KEY}&limit=1`
+  );
+  const resp = await obj.json();
+  city = resp.features[0].properties.context.place.name;
+  state = resp.features[0].properties.context.region.name;
+  city_string = city + ", " + state;
+  generateLocations(
+    req.query["lat"],
+    req.query["long"],
+    city_string,
+    req.query["number"]
+  ).then((choices) => {
+    return res.json(choices);
   });
+});
 
 module.exports = router;
