@@ -36,7 +36,7 @@ const processData = async (data, n) => {
       lat: resp.batch[i].features[0].properties.coordinates.latitude,
       long: resp.batch[i].features[0].properties.coordinates.longitude,
       clueType: "text",
-      clueText: riddles[i],
+      clueText: riddles[i].riddle,
     };
   }
   choices.sort(() => 0.5 - Math.random());
