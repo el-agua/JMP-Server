@@ -1,14 +1,9 @@
-var express = require("express");
-var router = express.Router();
-var {generateLocations} = require("./utils");
-require("dotenv").config();
-
 const processData = async (data, n) => {
   let choices = data.choices[0].message.content.split(";");
   choices = choices.map((choice) => choice.trim());
   choices = choices.map((choice) => {
-    const [name, address] = choice.split(":");
-    return { name, address };
+    const [key, address] = choice.split(":");
+    return { _id: key, address };
   });
   addy = choices.map((choice) => choice.address);
   addy = addy.map((addy) => {
@@ -26,35 +21,29 @@ const processData = async (data, n) => {
     options
   );
   const resp = await obj.json();
+  const q = {}
   for (let i = 0; i < choices.length; i++) {
-    choices[i].coordinates = {
-      latitude: resp.batch[i].features[0].properties.coordinates.latitude,
-      longitude: resp.batch[i].features[0].properties.coordinates.longitude,
+    q[choices[i]._id] = {...choices[i],
+      lat: resp.batch[i].features[0].properties.coordinates.latitude,
+      long: resp.batch[i].features[0].properties.coordinates.longitude,
     };
   }
   choices.sort(() => 0.5 - Math.random());
-  let q = [];
-  q.push(choices[0]);
-  for (let i = 0; i < n; i++) {
-    q.push(choices.slice(4 * i + 1, 4 * i + 5));
-  }
-  return q;
+  
+  return q
 };
 
-/* GET locations listing. */
-router.get("/generate", async function (req, res, next) {
-
+const generateLocations = (lat, lon, city, number) => {
   if (
-    !req.query["latitude"] ||
-    !req.query["longitude"] ||
-    !req.query["city"] ||
-    !req.query["number"]
+    !lat ||
+    !lon ||
+    !city ||
+    !number
   ) {
     res.status(500).send("Please provide a latitude, longitude, and city");
     return;
   }
-  
-  
+
   const query = {
     model: "llama-3.1-sonar-large-128k-online",
     messages: [
@@ -65,11 +54,11 @@ router.get("/generate", async function (req, res, next) {
       {
         role: "user",
         content: `Give me a list of ${String(
-          req.query["number"] * 4 + 1
+          number * 4 + 1
         )} unique landmarks close to the coordinate location (${
-          req.query["latitude"]
-        }, ${req.query["longitude"]}), ${
-          req.query["city"]
+          lat
+        }, ${lon}), ${
+          city
         } in the form {LANDMARK_NAME}:{LANDMARK_MAILING_ADDRESS},{LANDMARK_CITY},{LANDMARK_STATE} separated by a ; delimeter. Please omit any commentary or details before the list. The answer should contain solely the list with no formatting or newline characters.`,
       },
     ],
@@ -93,38 +82,12 @@ router.get("/generate", async function (req, res, next) {
     },
     body: JSON.stringify(query),
   };
-  fetch("https://api.perplexity.ai/chat/completions", options)
+  return fetch("https://api.perplexity.ai/chat/completions", options)
     .then((response) => response.json())
     .then((data) =>
-      processData(data, req.query["number"]).then((choices) =>
-        res.send({ end: choices[0], path: choices.slice(1) })
-      )
+      processData(data, number).then((choices) => choices)
     )
     .catch((err) => res.status(500).send(err));
-});
+};
 
-/* GET game loop data */
-router.get("/coordinates", async function (req, res, next) {
-
-    if (!req.query["lat"] ||
-      !req.query["long"] ||
-      !req.query["number"]
-    ) {
-      res.status(500).send("Please provide a latitude, longitude");
-      return;
-    }
-    const obj = await fetch(
-        `https://api.mapbox.com/search/geocode/v6/reverse?longitude=${req.query["long"]}&latitude=${req.query["lat"]}&access_token=${process.env.MAPBOX_KEY}&limit=1`,
-      );
-    const resp = await obj.json();
-    city = resp.features[0].properties.context.place.name;
-    state = resp.features[0].properties.context.region.name;
-    city_string = city + ", " + state;
-    generateLocations(req.query["lat"], req.query["long"], city_string, req.query["number"]).then((choices) => {
-        res.json(choices)
-    });
-  
-    
-  });
-
-module.exports = router;
+module.exports = { generateLocations };
