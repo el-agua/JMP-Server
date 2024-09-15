@@ -23,11 +23,11 @@ router.post('/', async function (req, res, next) {
       const messages = [
         {
           "role": "system",
-          "content": "You are a trivia expert. Provide a riddle about a location that will lead someone to and help them identify the location, and do not mention/reveal the location's name."
+          "content": "You are a trivia expert. Provide a riddle about a location that will lead someone to and help them identify the location, and do not mention/reveal the location's name. Omit any context and respond only with the riddle text."
         },
         {
           "role": "user",
-          "content": `Give me a riddle about this location: ${location}.`
+          "content": `Give me a riddle about this location: ${location}. The response should contain solely the riddle text. Omit any other information or response.`
         }
       ];
 
